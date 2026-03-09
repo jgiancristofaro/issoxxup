@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOXX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>IS SOXX UP?</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -15,26 +18,42 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      gap: 16px;
+      min-height: 100dvh;
+      gap: clamp(8px, 2.5vw, 16px);
+      padding: 16px;
+      text-align: center;
     }
 
     #ticker {
-      font-size: 2rem;
+      font-size: clamp(1.1rem, 5vw, 2rem);
       font-weight: 700;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.15em;
       color: #888;
       text-transform: uppercase;
     }
 
+    #answer {
+      font-size: clamp(1.6rem, 7vw, 3rem);
+      font-weight: 700;
+      color: #fff;
+    }
+
+    #price-row {
+      display: flex;
+      align-items: baseline;
+      gap: clamp(8px, 3vw, 16px);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
     #price {
-      font-size: 1.4rem;
+      font-size: clamp(1rem, 4vw, 1.4rem);
       font-weight: 300;
       color: #e0e0e0;
     }
 
     #change {
-      font-size: 1.4rem;
+      font-size: clamp(1rem, 4vw, 1.4rem);
       font-weight: 500;
     }
 
@@ -42,7 +61,7 @@
     #change.down { color: #ef4444; }
 
     #face {
-      font-size: 20rem;
+      font-size: clamp(8rem, 40vw, 20rem);
       line-height: 1;
       user-select: none;
       filter: drop-shadow(0 0 60px rgba(255,255,255,0.08));
@@ -50,14 +69,13 @@
     }
 
     #status {
-      font-size: 0.85rem;
+      font-size: clamp(0.7rem, 3vw, 0.85rem);
       color: #444;
-      margin-top: 8px;
     }
 
     #error {
       color: #ef4444;
-      font-size: 0.9rem;
+      font-size: clamp(0.75rem, 3vw, 0.9rem);
       display: none;
     }
 
@@ -65,21 +83,23 @@
       background: none;
       border: 1px solid #333;
       color: #666;
-      font-size: 0.85rem;
-      padding: 6px 18px;
+      font-size: clamp(0.8rem, 3vw, 0.85rem);
+      padding: 10px 24px;
       border-radius: 20px;
       cursor: pointer;
       transition: border-color 0.2s, color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    #refresh-btn:hover { border-color: #666; color: #aaa; }
-    #refresh-btn:active { color: #e0e0e0; }
+    #refresh-btn:hover  { border-color: #666; color: #aaa; }
+    #refresh-btn:active { color: #e0e0e0; border-color: #888; }
   </style>
 </head>
 <body>
 
   <div id="ticker">IS SOXX UP TODAY?</div>
-  <div id="answer" style="font-size:3rem;font-weight:700;color:#fff;">—</div>
-  <div style="display:flex;align-items:baseline;gap:16px;">
+  <div id="answer">—</div>
+  <div id="price-row">
     <div id="price">—</div>
     <div id="change">—</div>
   </div>
@@ -104,23 +124,23 @@
       const meta = data?.chart?.result?.[0]?.meta;
       if (!meta) throw new Error('No data');
 
-      const price    = meta.regularMarketPrice;
+      const price     = meta.regularMarketPrice;
       const prevClose = meta.chartPreviousClose ?? meta.previousClose;
 
       if (price == null || prevClose == null) throw new Error('Missing price data');
 
-      const diff    = price - prevClose;
-      const pct     = (diff / prevClose) * 100;
-      const isUp    = diff >= 0;
+      const diff = price - prevClose;
+      const pct  = (diff / prevClose) * 100;
+      const isUp = diff >= 0;
 
-      document.getElementById('price').textContent  = `$${price.toFixed(2)}`;
+      document.getElementById('price').textContent = `$${price.toFixed(2)}`;
 
       const changeEl = document.getElementById('change');
       const sign = isUp ? '+' : '';
       changeEl.textContent = `${sign}${diff.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`;
       changeEl.className   = isUp ? 'up' : 'down';
 
-      document.getElementById('face').textContent = isUp ? '😊' : '😞';
+      document.getElementById('face').textContent   = isUp ? '😊' : '😞';
       document.getElementById('answer').textContent = isUp ? 'Yes, we are SO back.' : "No, it's all over.";
 
       const now = new Date().toLocaleTimeString();
