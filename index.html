@@ -61,6 +61,33 @@
     #change.up   { color: #22c55e; }
     #change.down { color: #ef4444; }
 
+    #afterhours-row {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #afterhours-label {
+      font-size: clamp(0.65rem, 2.5vw, 0.75rem);
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    #afterhours-prices {
+      display: flex;
+      align-items: baseline;
+      gap: clamp(6px, 2vw, 12px);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #ah-price  { font-size: clamp(0.85rem, 3.5vw, 1rem); font-weight: 300; color: #aaa; }
+    #ah-change { font-size: clamp(0.85rem, 3.5vw, 1rem); font-weight: 500; }
+    #ah-change.up   { color: #16a34a; }
+    #ah-change.down { color: #b91c1c; }
+
     #face {
       font-size: clamp(12rem, 55vw, 20rem);
       line-height: 1;
@@ -104,6 +131,13 @@
     <div id="price">—</div>
     <div id="change">—</div>
   </div>
+  <div id="afterhours-row">
+    <div id="afterhours-label">after hours</div>
+    <div id="afterhours-prices">
+      <div id="ah-price"></div>
+      <div id="ah-change"></div>
+    </div>
+  </div>
   <div id="face">😐</div>
   <div id="status">loading...</div>
   <div id="error"></div>
@@ -143,6 +177,24 @@
 
       document.getElementById('face').textContent   = isUp ? '😊' : '😞';
       document.getElementById('answer').textContent = isUp ? 'Yes, we are SO back.' : "No, it's all over.";
+
+      // After-hours (post-market) data
+      const ahPrice  = meta.postMarketPrice;
+      const ahChange = meta.postMarketChange;
+      const ahPct    = meta.postMarketChangePercent;
+      const ahRow    = document.getElementById('afterhours-row');
+
+      if (ahPrice != null && ahChange != null) {
+        const ahIsUp = ahChange >= 0;
+        const ahSign = ahIsUp ? '+' : '';
+        document.getElementById('ah-price').textContent  = `$${ahPrice.toFixed(2)}`;
+        const ahEl = document.getElementById('ah-change');
+        ahEl.textContent = `${ahSign}${ahChange.toFixed(2)}  (${ahSign}${(ahPct ?? (ahChange / price * 100)).toFixed(2)}%)`;
+        ahEl.className   = ahIsUp ? 'up' : 'down';
+        ahRow.style.display = 'flex';
+      } else {
+        ahRow.style.display = 'none';
+      }
 
       const now = new Date().toLocaleTimeString();
       document.getElementById('status').textContent = `updated ${now} · refreshes every minute`;
