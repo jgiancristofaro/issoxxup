@@ -148,7 +148,7 @@
     const REFRESH_MS = 60_000;
 
     async function fetchQuote() {
-      const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${SYMBOL}`;
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?interval=1d&range=1d&includePrePost=true`;
       const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
       const res = await fetch(proxy);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -156,11 +156,11 @@
     }
 
     function update(data) {
-      const q = data?.quoteResponse?.result?.[0];
-      if (!q) throw new Error('No data');
+      const meta = data?.chart?.result?.[0]?.meta;
+      if (!meta) throw new Error('No data');
 
-      const price     = q.regularMarketPrice;
-      const prevClose = q.regularMarketPreviousClose;
+      const price     = meta.regularMarketPrice;
+      const prevClose = meta.chartPreviousClose ?? meta.previousClose;
 
       if (price == null || prevClose == null) throw new Error('Missing price data');
 
@@ -178,18 +178,18 @@
       document.getElementById('face').textContent   = isUp ? '😊' : '😞';
       document.getElementById('answer').textContent = isUp ? 'Yes, we are SO back.' : "No, it's all over.";
 
-      // After-hours (post-market) data
-      const ahPrice  = q.postMarketPrice;
-      const ahChange = q.postMarketChange;
-      const ahPct    = q.postMarketChangePercent;
+      // After-hours (post-market) data — change is vs regular market close
+      const ahPrice  = meta.postMarketPrice;
       const ahRow    = document.getElementById('afterhours-row');
 
-      if (ahPrice != null && ahChange != null) {
-        const ahIsUp = ahChange >= 0;
-        const ahSign = ahIsUp ? '+' : '';
+      if (ahPrice != null) {
+        const ahChange = ahPrice - price;
+        const ahPct    = (ahChange / price) * 100;
+        const ahIsUp   = ahChange >= 0;
+        const ahSign   = ahIsUp ? '+' : '';
         document.getElementById('ah-price').textContent = `$${ahPrice.toFixed(2)}`;
         const ahEl = document.getElementById('ah-change');
-        ahEl.textContent = `${ahSign}${ahChange.toFixed(2)}  (${ahSign}${(ahPct ?? (ahChange / price * 100)).toFixed(2)}%)`;
+        ahEl.textContent = `${ahSign}${ahChange.toFixed(2)}  (${ahSign}${ahPct.toFixed(2)}%)`;
         ahEl.className   = ahIsUp ? 'up' : 'down';
         ahRow.style.display = 'flex';
       } else {
