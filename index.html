@@ -156,7 +156,8 @@
     }
 
     function update(data) {
-      const meta = data?.chart?.result?.[0]?.meta;
+      const result = data?.chart?.result?.[0];
+      const meta   = result?.meta;
       if (!meta) throw new Error('No data');
 
       const price     = meta.regularMarketPrice;
@@ -178,9 +179,21 @@
       document.getElementById('face').textContent   = isUp ? '😊' : '😞';
       document.getElementById('answer').textContent = isUp ? 'Yes, we are SO back.' : "No, it's all over.";
 
-      // After-hours (post-market) data — change is vs regular market close
-      const ahPrice  = meta.postMarketPrice;
-      const ahRow    = document.getElementById('afterhours-row');
+      // After-hours: find closes within the post-market period window
+      const postPeriod = meta.currentTradingPeriod?.post;
+      const timestamps = result?.timestamp ?? [];
+      const closes     = result?.indicators?.quote?.[0]?.close ?? [];
+      const ahRow      = document.getElementById('afterhours-row');
+
+      let ahPrice = null;
+      if (postPeriod) {
+        for (let i = timestamps.length - 1; i >= 0; i--) {
+          if (timestamps[i] >= postPeriod.start && closes[i] != null) {
+            ahPrice = closes[i];
+            break;
+          }
+        }
+      }
 
       if (ahPrice != null) {
         const ahChange = ahPrice - price;
