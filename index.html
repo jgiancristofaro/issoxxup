@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOXX</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 16px;
+    }
+
+    #ticker {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    #price {
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: #e0e0e0;
+    }
+
+    #change {
+      font-size: 1.4rem;
+      font-weight: 500;
+    }
+
+    #change.up   { color: #22c55e; }
+    #change.down { color: #ef4444; }
+
+    #face {
+      font-size: 20rem;
+      line-height: 1;
+      user-select: none;
+      filter: drop-shadow(0 0 60px rgba(255,255,255,0.08));
+      transition: all 0.4s ease;
+    }
+
+    #status {
+      font-size: 0.85rem;
+      color: #444;
+      margin-top: 8px;
+    }
+
+    #error {
+      color: #ef4444;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    #refresh-btn {
+      background: none;
+      border: 1px solid #333;
+      color: #666;
+      font-size: 0.85rem;
+      padding: 6px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #refresh-btn:hover { border-color: #666; color: #aaa; }
+    #refresh-btn:active { color: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+  <div id="ticker">IS SOXX UP TODAY?</div>
+  <div id="answer" style="font-size:3rem;font-weight:700;color:#fff;">—</div>
+  <div style="display:flex;align-items:baseline;gap:16px;">
+    <div id="price">—</div>
+    <div id="change">—</div>
+  </div>
+  <div id="face">😐</div>
+  <div id="status">loading...</div>
+  <div id="error"></div>
+  <button id="refresh-btn" onclick="refresh()">↻ refresh</button>
+
+  <script>
+    const SYMBOL = 'SOXX';
+    const REFRESH_MS = 60_000;
+
+    async function fetchQuote() {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?interval=1d&range=1d`;
+      const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+      const res = await fetch(proxy);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    function update(data) {
+      const meta = data?.chart?.result?.[0]?.meta;
+      if (!meta) throw new Error('No data');
+
+      const price    = meta.regularMarketPrice;
+      const prevClose = meta.chartPreviousClose ?? meta.previousClose;
+
+      if (price == null || prevClose == null) throw new Error('Missing price data');
+
+      const diff    = price - prevClose;
+      const pct     = (diff / prevClose) * 100;
+      const isUp    = diff >= 0;
+
+      document.getElementById('price').textContent  = `$${price.toFixed(2)}`;
+
+      const changeEl = document.getElementById('change');
+      const sign = isUp ? '+' : '';
+      changeEl.textContent = `${sign}${diff.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`;
+      changeEl.className   = isUp ? 'up' : 'down';
+
+      document.getElementById('face').textContent = isUp ? '😊' : '😞';
+      document.getElementById('answer').textContent = isUp ? 'Yes!' : 'No!';
+
+      const now = new Date().toLocaleTimeString();
+      document.getElementById('status').textContent = `updated ${now} · refreshes every minute`;
+      document.getElementById('error').style.display = 'none';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = `Error: ${msg}`;
+      el.style.display = 'block';
+      document.getElementById('status').textContent = `last attempt: ${new Date().toLocaleTimeString()}`;
+    }
+
+    async function refresh() {
+      try {
+        const data = await fetchQuote();
+        update(data);
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, REFRESH_MS);
+  </script>
+</body>
+</html>
