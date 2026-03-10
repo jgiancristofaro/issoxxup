@@ -148,7 +148,7 @@
     const REFRESH_MS = 60_000;
 
     async function fetchQuote() {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?interval=1d&range=1d&includePrePost=true`;
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?interval=5m&range=1d&includePrePost=true`;
       const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
       const res = await fetch(proxy);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
