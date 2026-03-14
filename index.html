@@ -149,10 +149,22 @@
 
     async function fetchQuote() {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMBOL}?interval=5m&range=1d&includePrePost=true`;
-      const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
-      const res = await fetch(proxy);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
+      const proxies = [
+        'https://corsproxy.io/?' + encodeURIComponent(url),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+        'https://corsproxy.io/?url=' + encodeURIComponent(url),
+      ];
+      let lastErr;
+      for (const proxy of proxies) {
+        try {
+          const res = await fetch(proxy);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr;
     }
 
     function update(data) {
